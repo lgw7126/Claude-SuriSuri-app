@@ -3,51 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SuriSuri — 스마트 주거 관리</title>
+  <title>SuriSuri</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
+    /* ─────────────────────────────────────────
+       Design Tokens
+    ───────────────────────────────────────── */
     :root {
-      --bg:           #020202;
-      --surface:      #0e0e0e;
-      --border:       rgba(180, 180, 180, 0.11);
-      --border-hover: rgba(200, 200, 200, 0.22);
-      --silver:       #9a9a9a;
-      --silver-lt:    #c4c4c4;
-      --cream:        #f0ede6;
-      --muted:        #3c3c3c;
-      --muted-lt:     #555;
+      --bg:            #000000;
+      --glass-bg:      rgba(22, 22, 22, 0.72);
+      --glass-border:  rgba(210, 210, 210, 0.10);
+      --glass-shine:   rgba(255, 255, 255, 0.055);
+      --silver:        #9e9e9e;
+      --silver-lt:     #c8c8c8;
+      --silver-dim:    #5a5a5a;
+      --cream:         #f2efe8;
+      --muted:         #3a3a3a;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--cream);
       min-height: 100dvh;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       overflow-x: hidden;
     }
 
-    /* ── ambient light effect ── */
-    body::before {
-      content: '';
+    /* ─────────────────────────────────────────
+       Background — layered ambient light
+    ───────────────────────────────────────── */
+    .bg-layer {
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(ellipse 70% 40% at 25% -5%, rgba(58, 58, 58, 0.25) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 35% at 80% 110%, rgba(30, 30, 30, 0.4) 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
+      background:
+        /* upper-left cool glow */
+        radial-gradient(ellipse 65% 45% at 20% -8%,
+          rgba(80, 80, 80, 0.20) 0%,
+          transparent 70%),
+        /* lower-right warm depth */
+        radial-gradient(ellipse 55% 40% at 85% 108%,
+          rgba(40, 40, 40, 0.35) 0%,
+          transparent 70%),
+        /* center vignette */
+        radial-gradient(ellipse 100% 100% at 50% 50%,
+          rgba(0,0,0,0) 30%,
+          rgba(0,0,0,0.60) 100%);
     }
 
-    /* ── page shell ── */
+    /* ─────────────────────────────────────────
+       Page Shell
+    ───────────────────────────────────────── */
     .shell {
       position: relative;
       z-index: 1;
@@ -56,191 +68,256 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      padding: 0 22px;
+      padding: 0 24px 40px;
     }
 
-    /* ── header ── */
+    /* ─────────────────────────────────────────
+       Header
+    ───────────────────────────────────────── */
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-top: 52px;
-      padding-bottom: 28px;
+      padding-top: 54px;
+      padding-bottom: 8px;
     }
 
     .logo {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.30em;
       text-transform: uppercase;
       color: var(--silver-lt);
+      user-select: none;
     }
-    .logo em {
-      font-style: normal;
+    .logo strong {
+      font-weight: 700;
       color: var(--cream);
     }
 
-    .icon-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 11px;
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid var(--border);
+    /* small glass pill — notification / status */
+    .header-status {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--silver);
-      cursor: pointer;
-      transition: all 0.3s ease-in-out;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-    .icon-btn:hover {
-      background: rgba(255, 255, 255, 0.065);
-      border-color: var(--border-hover);
-    }
-
-    /* ── greeting ── */
-    .greeting {
-      padding-bottom: 30px;
-    }
-
-    .pill-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
+      gap: 6px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
       border-radius: 100px;
-      padding: 5px 13px;
-      margin-bottom: 18px;
+      padding: 5px 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
-    .pill-dot {
+    .status-dot {
       width: 5px; height: 5px;
       border-radius: 50%;
-      background: var(--silver);
-      opacity: 0.55;
+      background: var(--silver-lt);
+      opacity: 0.5;
     }
-    .pill-text {
+    .status-text {
       font-size: 10px;
       font-weight: 400;
+      letter-spacing: 0.12em;
       color: var(--silver);
-      letter-spacing: 0.14em;
     }
 
-    h1 {
-      font-size: 30px;
+    /* ─────────────────────────────────────────
+       Headline Section
+    ───────────────────────────────────────── */
+    .headline-section {
+      padding: 36px 0 10px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      color: var(--silver-dim);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .headline {
+      font-size: 32px;
       font-weight: 700;
-      line-height: 1.25;
-      letter-spacing: -0.02em;
+      line-height: 1.22;
+      letter-spacing: -0.025em;
       color: var(--cream);
     }
 
-    .sub {
-      margin-top: 10px;
+    .headline-sub {
+      margin-top: 12px;
       font-size: 14px;
       font-weight: 300;
+      line-height: 1.65;
       color: var(--silver);
-      letter-spacing: 0.015em;
-      line-height: 1.6;
+      letter-spacing: 0.01em;
     }
 
-    /* ── divider ── */
+    /* ─────────────────────────────────────────
+       Section Divider
+    ───────────────────────────────────────── */
     .divider {
       height: 1px;
-      background: linear-gradient(90deg, transparent 0%, var(--border) 25%, var(--border) 75%, transparent 100%);
-      margin-bottom: 26px;
+      margin: 32px 0 30px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(200,200,200,0.12) 20%,
+        rgba(200,200,200,0.12) 80%,
+        transparent 100%
+      );
     }
 
-    /* ── action buttons ── */
+    /* ─────────────────────────────────────────
+       Action Buttons  — glass + metal
+    ───────────────────────────────────────── */
     .actions {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
     .action-btn {
       position: relative;
-      min-height: 120px;
+      min-height: 112px;
+      width: 100%;
       display: flex;
       align-items: center;
       gap: 22px;
-      padding: 26px 24px;
-      border-radius: 22px;
+      padding: 28px 26px;
+      border-radius: 24px;
       cursor: pointer;
       text-align: left;
       overflow: hidden;
-      /* metal surface */
-      background: linear-gradient(160deg, #161616 0%, #0b0b0b 100%);
-      border: 1px solid var(--border);
+
+      /* glass base */
+      background:
+        linear-gradient(
+          150deg,
+          rgba(30, 30, 30, 0.85) 0%,
+          rgba(12, 12, 12, 0.92) 100%
+        );
+
+      /* edge definition */
+      border: 1px solid var(--glass-border);
+
+      /* depth + glass reflection */
       box-shadow:
-        inset 0 1px 0   rgba(255,255,255,0.07),
-        inset 0 -1px 0  rgba(0,0,0,0.55),
-        0 8px 28px       rgba(0,0,0,0.65),
-        0 1px 0          rgba(255,255,255,0.025);
-      transition: all 0.3s ease-in-out;
+        /* inner top highlight — light catching rim */
+        inset 0 1px 0   rgba(255,255,255,0.075),
+        /* inner bottom shadow — depth */
+        inset 0 -2px 6px rgba(0,0,0,0.55),
+        /* inner side ambient */
+        inset 1px 0 4px  rgba(255,255,255,0.02),
+        /* outer lift shadow */
+        0 10px 40px rgba(0,0,0,0.70),
+        0 2px  8px  rgba(0,0,0,0.50),
+        /* very subtle outer silver edge glow */
+        0 0 0 0.5px rgba(180,180,180,0.06);
+
+      /* glass blur */
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+
+      transition: all 0.35s ease-in-out;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* top-edge metallic sheen */
+    /* top metallic sheen line */
     .action-btn::before {
       content: '';
       position: absolute;
-      top: 0; left: 10%; right: 10%;
+      top: 0; left: 12%; right: 12%;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.10) 40%,
+        rgba(255,255,255,0.10) 60%,
+        transparent 100%
+      );
     }
 
-    /* subtle left-side ambient highlight */
+    /* left-side ambient light */
     .action-btn::after {
       content: '';
       position: absolute;
       inset: 0;
-      border-radius: 22px;
-      background: radial-gradient(ellipse 55% 60% at 15% 50%, rgba(255,255,255,0.028) 0%, transparent 65%);
+      border-radius: 24px;
+      background: radial-gradient(
+        ellipse 50% 65% at 12% 50%,
+        rgba(255,255,255,0.032) 0%,
+        transparent 65%
+      );
       pointer-events: none;
     }
 
+    /* ── hover: background deepens, rim brightens ── */
     .action-btn:hover {
-      background: linear-gradient(160deg, #101010 0%, #080808 100%);
-      border-color: var(--border-hover);
+      background:
+        linear-gradient(
+          150deg,
+          rgba(18, 18, 18, 0.90) 0%,
+          rgba(6, 6, 6, 0.96) 100%
+        );
+      border-color: rgba(210, 210, 210, 0.18);
       box-shadow:
-        inset 0 3px 10px rgba(0,0,0,0.85),
-        inset 0 1px 0    rgba(255,255,255,0.045),
-        0 4px 14px        rgba(0,0,0,0.85);
+        inset 0 2px 8px  rgba(0,0,0,0.80),
+        inset 0 -1px 4px rgba(0,0,0,0.60),
+        0 6px 24px rgba(0,0,0,0.80),
+        0 1px 6px  rgba(0,0,0,0.60);
       transform: translateY(1px);
     }
 
+    /* ── active / touch: pressed into the surface ── */
     .action-btn:active {
-      background: linear-gradient(160deg, #0a0a0a 0%, #060606 100%);
+      background:
+        linear-gradient(
+          150deg,
+          rgba(10, 10, 10, 0.95) 0%,
+          rgba(4, 4, 4, 0.98) 100%
+        );
+      border-color: rgba(180, 180, 180, 0.12);
       box-shadow:
-        inset 0 5px 14px rgba(0,0,0,1),
-        0 2px 8px         rgba(0,0,0,0.9);
+        inset 0 5px 16px rgba(0,0,0,1),
+        inset 0 -1px 4px rgba(0,0,0,0.80),
+        0 3px 12px rgba(0,0,0,0.90);
       transform: translateY(2px);
     }
 
-    /* icon container — inset panel look */
+    /* ── icon container — inset panel ── */
     .btn-icon-box {
-      width: 60px; height: 60px;
+      position: relative;
+      z-index: 1;
+      width: 62px; height: 62px;
       flex-shrink: 0;
-      border-radius: 15px;
-      background: rgba(255,255,255,0.035);
-      border: 1px solid rgba(180,180,180,0.09);
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow:
-        inset 0 2px 4px rgba(0,0,0,0.6),
-        inset 0 1px 0   rgba(255,255,255,0.055);
       color: var(--silver-lt);
+
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(200,200,200,0.09);
+      box-shadow:
+        inset 0 2px 6px rgba(0,0,0,0.65),
+        inset 0 1px 0   rgba(255,255,255,0.055),
+        0 1px 3px rgba(255,255,255,0.015);
     }
 
-    .btn-texts { flex: 1; }
+    /* ── text ── */
+    .btn-texts {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
 
     .btn-title {
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 600;
       color: var(--cream);
-      letter-spacing: -0.01em;
-      margin-bottom: 5px;
+      letter-spacing: -0.015em;
+      margin-bottom: 6px;
     }
 
     .btn-desc {
@@ -248,208 +325,104 @@
       font-weight: 300;
       color: var(--silver);
       letter-spacing: 0.03em;
-      line-height: 1.45;
-      opacity: 0.7;
+      line-height: 1.5;
+      opacity: 0.65;
     }
 
+    /* ── chevron ── */
     .btn-chevron {
+      position: relative;
+      z-index: 1;
       flex-shrink: 0;
-      color: var(--muted-lt);
-      transition: all 0.3s ease-in-out;
+      color: var(--silver-dim);
+      transition: all 0.35s ease-in-out;
     }
     .action-btn:hover .btn-chevron {
       color: var(--silver-lt);
-      transform: translateX(3px);
+      transform: translateX(4px);
     }
 
-    /* ── recent section ── */
-    .recent {
-      padding: 28px 0 20px;
+    /* ─────────────────────────────────────────
+       Bottom hint
+    ───────────────────────────────────────── */
+    .bottom-hint {
+      margin-top: 36px;
+      text-align: center;
     }
-
-    .section-label {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--muted-lt);
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    .recent-card {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(180,180,180,0.06);
-      border-radius: 13px;
-      padding: 14px 16px;
-      margin-bottom: 9px;
-    }
-
-    .recent-icon-box {
-      width: 38px; height: 38px;
-      flex-shrink: 0;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(180,180,180,0.07);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted-lt);
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
-    }
-
-    .recent-info { flex: 1; }
-
-    .recent-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: #ccc9c3;
-      margin-bottom: 3px;
-    }
-
-    .recent-date {
+    .bottom-hint-text {
       font-size: 11px;
       font-weight: 300;
-      color: var(--muted-lt);
+      color: var(--muted);
+      letter-spacing: 0.12em;
     }
-
-    .badge {
-      font-size: 10px;
-      font-weight: 500;
-      padding: 4px 9px;
-      border-radius: 100px;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-    .badge-active {
-      background: rgba(170,170,170,0.1);
-      border: 1px solid rgba(180,180,180,0.18);
-      color: var(--silver-lt);
-    }
-    .badge-done {
-      background: rgba(80,80,80,0.12);
-      border: 1px solid rgba(80,80,80,0.12);
-      color: var(--muted-lt);
-    }
-
-    /* ── bottom navigation ── */
-    .bottom-nav {
-      margin-top: auto;
-      position: sticky;
-      bottom: 0;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-around;
-      padding: 14px 0 32px;
-      margin-left: -22px;
-      margin-right: -22px;
-      background: rgba(2,2,2,0.92);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border-top: 1px solid var(--border);
-    }
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 20px;
-      cursor: pointer;
-      transition: all 0.3s ease-in-out;
-      color: var(--muted-lt);
-    }
-
-    .nav-item.active { color: var(--silver-lt); }
-
-    .nav-label {
-      font-size: 10px;
-      font-weight: 400;
-      letter-spacing: 0.04em;
-    }
-
-    .nav-item.active .nav-label { color: var(--silver); }
-
-    .nav-active-dot {
-      width: 3px; height: 3px;
-      border-radius: 50%;
-      background: var(--silver-lt);
-      margin-top: 2px;
+    .bottom-hint-line {
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      background: var(--muted);
+      opacity: 0.4;
+      vertical-align: middle;
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
+
+  <!-- Ambient background layers -->
+  <div class="bg-layer" aria-hidden="true"></div>
+
   <div class="shell">
 
     <!-- ── Header ── -->
     <header class="header">
-      <div class="logo">Suri<em>Suri</em></div>
-      <button class="icon-btn" aria-label="설정">
-        <!-- gear icon -->
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
-                   a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
-                   A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06
-                   a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15
-                   a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
-                   A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06
-                   a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68
-                   a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
-                   a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06
-                   a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9
-                   a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
-                   a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
+      <div class="logo">Suri<strong>Suri</strong></div>
+
+      <div class="header-status" aria-label="서비스 상태">
+        <span class="status-dot"></span>
+        <span class="status-text">PREMIUM CARE</span>
+      </div>
     </header>
 
-    <!-- ── Greeting ── -->
-    <section class="greeting">
-      <div class="pill-tag">
-        <span class="pill-dot"></span>
-        <span class="pill-text">PREMIUM RESIDENCE CARE</span>
-      </div>
-      <h1>무엇을<br>도와드릴까요?</h1>
-      <p class="sub">고장이나 문제 사항을 알려주시면<br>빠르게 처리해 드리겠습니다.</p>
+    <!-- ── Headline ── -->
+    <section class="headline-section">
+      <p class="eyebrow">Residence Management</p>
+      <h1 class="headline">무엇을<br>도와드릴까요?</h1>
+      <p class="headline-sub">
+        고장이나 불편한 점을 알려주시면<br>
+        신속하게 처리해 드리겠습니다.
+      </p>
     </section>
 
-    <div class="divider"></div>
+    <div class="divider" aria-hidden="true"></div>
 
     <!-- ── Action Buttons ── -->
-    <section class="actions">
+    <section class="actions" aria-label="진단 방법 선택">
 
-      <!-- Camera -->
-      <button class="action-btn" onclick="handleCamera(this)">
-        <div class="btn-icon-box">
-          <!-- camera icon -->
+      <!-- 사진으로 진단받기 -->
+      <button class="action-btn" onclick="handleCamera()" aria-label="사진으로 진단받기">
+        <div class="btn-icon-box" aria-hidden="true">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8
-                     a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2
+                     V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
         </div>
         <div class="btn-texts">
-          <div class="btn-title">사진으로 고장 진단</div>
-          <div class="btn-desc">사진을 찍어 문제를 바로 접수하세요</div>
+          <div class="btn-title">사진으로 진단받기</div>
+          <div class="btn-desc">고장 부위를 촬영하면<br>바로 접수됩니다</div>
         </div>
         <svg class="btn-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round">
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
       </button>
 
-      <!-- Voice -->
-      <button class="action-btn" onclick="handleVoice(this)">
-        <div class="btn-icon-box">
-          <!-- microphone icon -->
+      <!-- 음성으로 진단받기 -->
+      <button class="action-btn" onclick="handleVoice()" aria-label="음성으로 진단받기">
+        <div class="btn-icon-box" aria-hidden="true">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="1.5"
                stroke-linecap="round" stroke-linejoin="round">
@@ -460,137 +433,38 @@
           </svg>
         </div>
         <div class="btn-texts">
-          <div class="btn-title">음성으로 고장 진단</div>
-          <div class="btn-desc">말씀해 주시면 바로 접수해 드립니다</div>
+          <div class="btn-title">음성으로 진단받기</div>
+          <div class="btn-desc">말씀해 주시면<br>바로 접수해 드립니다</div>
         </div>
         <svg class="btn-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round">
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
       </button>
 
     </section>
 
-    <!-- ── Recent Requests ── -->
-    <section class="recent">
-      <div class="section-label">최근 접수 내역</div>
-
-      <div class="recent-card">
-        <div class="recent-icon-box">
-          <!-- wrench icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.6"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0
-                     l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91
-                     a2.12 2.12 0 0 1-3-3l6.91-6.91
-                     a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </div>
-        <div class="recent-info">
-          <div class="recent-title">거실 에어컨 누수</div>
-          <div class="recent-date">2025년 6월 17일</div>
-        </div>
-        <span class="badge badge-active">처리중</span>
-      </div>
-
-      <div class="recent-card">
-        <div class="recent-icon-box">
-          <!-- check-square icon -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.6"
-               stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 11 12 14 22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-        </div>
-        <div class="recent-info">
-          <div class="recent-title">현관 도어락 교체</div>
-          <div class="recent-date">2025년 6월 12일</div>
-        </div>
-        <span class="badge badge-done">완료</span>
-      </div>
-
-    </section>
-
-    <!-- ── Bottom Navigation ── -->
-    <nav class="bottom-nav">
-
-      <div class="nav-item active">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span class="nav-label">홈</span>
-        <div class="nav-active-dot"></div>
-      </div>
-
-      <div class="nav-item" onclick="switchNav(this)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
-                   a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-        <span class="nav-label">접수 내역</span>
-      </div>
-
-      <div class="nav-item" onclick="switchNav(this)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-          <line x1="6"  y1="1" x2="6"  y2="4"/>
-          <line x1="10" y1="1" x2="10" y2="4"/>
-          <line x1="14" y1="1" x2="14" y2="4"/>
-        </svg>
-        <span class="nav-label">공지</span>
-      </div>
-
-      <div class="nav-item" onclick="switchNav(this)">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span class="nav-label">마이페이지</span>
-      </div>
-
-    </nav>
+    <!-- ── Bottom Hint ── -->
+    <div class="bottom-hint">
+      <span class="bottom-hint-line"></span>
+      <span class="bottom-hint-text">24시간 접수 가능</span>
+      <span class="bottom-hint-line"></span>
+    </div>
 
   </div><!-- /.shell -->
 
   <script>
-    function handleCamera(btn) {
-      btn.style.transition = 'all 0.3s ease-in-out';
-      // placeholder: open camera flow
+    function handleCamera() {
+      // 추후 카메라 플로우 연결
+      console.log('[SuriSuri] 사진 진단 시작');
     }
 
-    function handleVoice(btn) {
-      btn.style.transition = 'all 0.3s ease-in-out';
-      // placeholder: open voice flow
-    }
-
-    function switchNav(el) {
-      document.querySelectorAll('.nav-item').forEach(n => {
-        n.classList.remove('active');
-        const dot = n.querySelector('.nav-active-dot');
-        if (dot) dot.remove();
-      });
-      el.classList.add('active');
-      const dot = document.createElement('div');
-      dot.className = 'nav-active-dot';
-      el.appendChild(dot);
+    function handleVoice() {
+      // 추후 음성 플로우 연결
+      console.log('[SuriSuri] 음성 진단 시작');
     }
   </script>
+
 </body>
 </html>
