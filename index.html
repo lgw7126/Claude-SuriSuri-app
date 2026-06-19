@@ -1,1205 +1,1154 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>SuriSuri</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    /* ─────────────────────────────────────────
-       Design Tokens
-    ───────────────────────────────────────── */
     :root {
-      --bg:            #000000;
-      --glass-bg:      rgba(22, 22, 22, 0.72);
-      --glass-border:  rgba(210, 210, 210, 0.10);
-      --glass-shine:   rgba(255, 255, 255, 0.055);
-      --silver:        #9e9e9e;
-      --silver-lt:     #c8c8c8;
-      --silver-dim:    #5a5a5a;
-      --cream:         #f2efe8;
-      --muted:         #3a3a3a;
+      --bg:       #000;
+      --surface:  #0e0e0e;
+      --border:   rgba(200,200,200,.10);
+      --silver:   #9a9a9a;
+      --slt:      #c6c6c6;
+      --dim:      #4e4e4e;
+      --cream:    #f1ede6;
+      --muted:    #333;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+      background:var(--bg);color:var(--cream);
+      min-height:100dvh;-webkit-font-smoothing:antialiased;overflow:hidden;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--cream);
-      min-height: 100dvh;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+    /* ── Screen System ── */
+    .screen{
+      position:fixed;inset:0;left:0;right:0;
+      max-width:430px;margin:0 auto;
+      background:var(--bg);
+      display:flex;flex-direction:column;
+      overflow-y:auto;overflow-x:hidden;
+      transform:translateX(100%);
+      transition:transform .36s cubic-bezier(.32,.72,0,1);
+      z-index:10;pointer-events:none;
     }
+    .screen.active{transform:translateX(0);pointer-events:auto;}
+    .screen.behind{transform:translateX(-22%);pointer-events:none;}
 
-    /* ─────────────────────────────────────────
-       Background — layered ambient light
-    ───────────────────────────────────────── */
-    .bg-layer {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
+    /* ambient bg only on main */
+    .amb{
+      position:fixed;inset:0;pointer-events:none;z-index:0;
       background:
-        /* upper-left cool glow */
-        radial-gradient(ellipse 65% 45% at 20% -8%,
-          rgba(80, 80, 80, 0.20) 0%,
-          transparent 70%),
-        /* lower-right warm depth */
-        radial-gradient(ellipse 55% 40% at 85% 108%,
-          rgba(40, 40, 40, 0.35) 0%,
-          transparent 70%),
-        /* center vignette */
-        radial-gradient(ellipse 100% 100% at 50% 50%,
-          rgba(0,0,0,0) 30%,
-          rgba(0,0,0,0.60) 100%);
+        radial-gradient(ellipse 65% 45% at 20% -8%,rgba(70,70,70,.22) 0%,transparent 70%),
+        radial-gradient(ellipse 55% 40% at 85% 108%,rgba(35,35,35,.38) 0%,transparent 70%),
+        radial-gradient(ellipse 100% 100% at 50% 50%,rgba(0,0,0,0) 30%,rgba(0,0,0,.6) 100%);
     }
 
-    /* ─────────────────────────────────────────
-       Page Shell
-    ───────────────────────────────────────── */
-    .shell {
-      position: relative;
-      z-index: 1;
-      max-width: 430px;
-      min-height: 100dvh;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      padding: 0 24px 40px;
+    /* ── Common Header ── */
+    .s-header{
+      position:sticky;top:0;z-index:20;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:52px 22px 14px;
+      background:rgba(0,0,0,.85);
+      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .s-header.no-border{border-bottom:none;background:transparent;backdrop-filter:none;}
+    .back-btn{
+      width:38px;height:38px;border-radius:50%;
+      background:rgba(255,255,255,.05);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;color:var(--silver);
+      transition:all .3s ease;-webkit-tap-highlight-color:transparent;
+      flex-shrink:0;
+    }
+    .back-btn:hover{background:rgba(255,255,255,.09);}
+    .s-title{
+      font-size:16px;font-weight:600;color:var(--cream);
+      letter-spacing:-.01em;text-align:center;flex:1;
+    }
+    .s-header-spacer{width:38px;flex-shrink:0;}
+
+    /* ── Logo ── */
+    .logo{
+      font-size:15px;font-weight:600;letter-spacing:.28em;
+      text-transform:uppercase;color:var(--slt);user-select:none;
+    }
+    .logo b{font-weight:700;color:var(--cream);}
+
+    /* ── Glass Button (main CTAs) ── */
+    .g-btn{
+      position:relative;min-height:110px;width:100%;
+      display:flex;align-items:center;gap:20px;
+      padding:26px 24px;border-radius:22px;
+      cursor:pointer;text-align:left;overflow:hidden;
+      background:linear-gradient(150deg,rgba(28,28,28,.88) 0%,rgba(10,10,10,.94) 100%);
+      border:1px solid var(--border);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 6px rgba(0,0,0,.55),
+                 0 8px 30px rgba(0,0,0,.68),0 0 0 .5px rgba(180,180,180,.05);
+      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+      transition:all .32s ease-in-out;-webkit-tap-highlight-color:transparent;
+    }
+    .g-btn::before{
+      content:'';position:absolute;top:0;left:12%;right:12%;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);
+    }
+    .g-btn:hover{
+      background:linear-gradient(150deg,rgba(16,16,16,.92) 0%,rgba(6,6,6,.97) 100%);
+      border-color:rgba(200,200,200,.18);
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.8),inset 0 -1px 4px rgba(0,0,0,.6),
+                 0 4px 16px rgba(0,0,0,.8);
+      transform:translateY(1px);
+    }
+    .g-btn:active{
+      transform:translateY(2px);
+      box-shadow:inset 0 5px 14px rgba(0,0,0,1),0 2px 8px rgba(0,0,0,.9);
+    }
+    .g-btn.accent{
+      background:linear-gradient(150deg,rgba(30,58,138,.75) 0%,rgba(14,28,70,.88) 100%);
+      border-color:rgba(37,99,235,.25);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 8px 30px rgba(37,99,235,.18);
+    }
+    .g-btn.accent:hover{
+      background:linear-gradient(150deg,rgba(22,44,110,.85) 0%,rgba(10,20,56,.95) 100%);
+    }
+    .icon-box{
+      position:relative;z-index:1;
+      width:58px;height:58px;border-radius:15px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--slt);
+      background:rgba(255,255,255,.035);border:1px solid rgba(200,200,200,.09);
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .icon-box.blue{background:rgba(37,99,235,.15);border-color:rgba(37,99,235,.25);color:#93c5fd;}
+    .btn-txts{position:relative;z-index:1;flex:1;}
+    .btn-main{font-size:18px;font-weight:600;color:var(--cream);letter-spacing:-.015em;margin-bottom:5px;}
+    .btn-sub{font-size:12px;font-weight:300;color:var(--silver);letter-spacing:.02em;line-height:1.5;opacity:.65;}
+    .btn-chev{position:relative;z-index:1;color:var(--dim);flex-shrink:0;transition:all .32s ease;}
+    .g-btn:hover .btn-chev{color:var(--slt);transform:translateX(3px);}
+
+    /* ── Divider ── */
+    .divider{
+      height:1px;margin:28px 0 24px;
+      background:linear-gradient(90deg,transparent,rgba(200,200,200,.11) 25%,rgba(200,200,200,.11) 75%,transparent);
     }
 
-    /* ─────────────────────────────────────────
-       Header
-    ───────────────────────────────────────── */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 54px;
-      padding-bottom: 8px;
+    /* ── Section Label ── */
+    .sec-label{
+      font-size:10px;font-weight:500;color:var(--dim);
+      letter-spacing:.18em;text-transform:uppercase;margin-bottom:14px;
     }
 
-    .logo {
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.30em;
-      text-transform: uppercase;
-      color: var(--silver-lt);
-      user-select: none;
+    /* ── Category Grid ── */
+    .cat-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;
     }
-    .logo strong {
-      font-weight: 700;
-      color: var(--cream);
+    .cat-card{
+      position:relative;
+      display:flex;flex-direction:column;align-items:flex-start;
+      gap:12px;padding:18px 16px;border-radius:18px;
+      cursor:pointer;
+      background:linear-gradient(145deg,rgba(20,20,20,.90) 0%,rgba(10,10,10,.95) 100%);
+      border:1px solid var(--border);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 4px 18px rgba(0,0,0,.5);
+      transition:all .28s ease-in-out;-webkit-tap-highlight-color:transparent;
+      overflow:hidden;
     }
-
-    /* small glass pill — notification / status */
-    .header-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 100px;
-      padding: 5px 12px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    .cat-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
     }
-    .status-dot {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--silver-lt);
-      opacity: 0.5;
+    .cat-card:hover{
+      border-color:rgba(200,200,200,.20);transform:translateY(1px);
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.7),0 2px 10px rgba(0,0,0,.6);
     }
-    .status-text {
-      font-size: 10px;
-      font-weight: 400;
-      letter-spacing: 0.12em;
-      color: var(--silver);
+    .cat-card:active{transform:translateY(2px);}
+    .cat-icon{
+      width:42px;height:42px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
     }
-
-    /* ─────────────────────────────────────────
-       Headline Section
-    ───────────────────────────────────────── */
-    .headline-section {
-      padding: 36px 0 10px;
+    .cat-name{font-size:13px;font-weight:600;color:var(--cream);line-height:1.3;letter-spacing:-.01em;}
+    .cat-count{font-size:10px;color:var(--silver);opacity:.6;margin-top:2px;}
+    .cat-urgent{
+      position:absolute;top:10px;right:10px;
+      font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;
+      background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.35);color:#fca5a5;
+      letter-spacing:.04em;
     }
 
-    .eyebrow {
-      font-size: 11px;
-      font-weight: 300;
-      letter-spacing: 0.22em;
-      color: var(--silver-dim);
-      text-transform: uppercase;
-      margin-bottom: 14px;
+    /* ── Sub-item List ── */
+    .sub-list{display:flex;flex-direction:column;gap:8px;}
+    .sub-item{
+      display:flex;align-items:center;gap:14px;
+      padding:16px 18px;border-radius:14px;cursor:pointer;
+      background:rgba(255,255,255,.025);border:1px solid var(--border);
+      transition:all .25s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .sub-item:hover{background:rgba(255,255,255,.05);border-color:rgba(200,200,200,.18);}
+    .sub-item:active{transform:translateX(2px);}
+    .sub-dot{
+      width:8px;height:8px;border-radius:50%;flex-shrink:0;
+      background:var(--dim);
+    }
+    .sub-text{font-size:15px;font-weight:400;color:var(--cream);flex:1;}
+    .sub-chev{color:var(--dim);}
+
+    /* ── Request Screen ── */
+    .req-summary{
+      padding:20px;border-radius:18px;margin-bottom:20px;
+      background:rgba(255,255,255,.025);border:1px solid var(--border);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .req-tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:6px;margin-bottom:10px;
+      font-size:11px;font-weight:500;letter-spacing:.04em;
+    }
+    .req-problem{font-size:20px;font-weight:700;color:var(--cream);letter-spacing:-.02em;margin-bottom:6px;}
+    .req-desc{font-size:13px;font-weight:300;color:var(--silver);line-height:1.55;}
+    .time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+    .time-chip{
+      padding:12px 6px;border-radius:11px;text-align:center;
+      font-size:12px;font-weight:500;color:var(--silver);
+      background:rgba(255,255,255,.03);border:1px solid var(--border);
+      cursor:pointer;transition:all .25s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .time-chip:hover{border-color:rgba(200,200,200,.2);}
+    .time-chip.selected{
+      background:rgba(37,99,235,.18);border-color:rgba(37,99,235,.45);color:#93c5fd;
+    }
+    .req-btn{
+      width:100%;min-height:72px;border-radius:20px;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+      background:linear-gradient(150deg,#1d4ed8 0%,#1e40af 100%);
+      border:1px solid rgba(147,197,253,.22);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 8px 28px rgba(37,99,235,.35);
+      transition:all .32s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .req-btn:hover{transform:translateY(1px);box-shadow:inset 0 3px 8px rgba(0,0,0,.3),0 4px 16px rgba(37,99,235,.25);}
+    .req-btn:active{transform:translateY(2px);}
+    .req-btn-main{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+    .req-btn-sub{font-size:12px;color:rgba(255,255,255,.65);}
+
+    /* ── Success State ── */
+    .success-wrap{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:18px;padding:32px 24px;text-align:center;
+      opacity:0;transition:opacity .5s ease;
+    }
+    .success-wrap.visible{opacity:1;}
+    .success-icon{
+      width:80px;height:80px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(34,197,94,.10);border:2px solid rgba(34,197,94,.28);
+      color:#4ade80;box-shadow:0 0 28px rgba(34,197,94,.18);
+    }
+    .success-title{font-size:22px;font-weight:700;color:var(--cream);letter-spacing:-.02em;}
+    .success-sub{font-size:14px;font-weight:300;color:var(--silver);line-height:1.6;}
+    .success-eta{
+      font-size:13px;font-weight:500;color:#93c5fd;
+      padding:8px 18px;border-radius:8px;
+      background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);
     }
 
-    .headline {
-      font-size: 32px;
-      font-weight: 700;
-      line-height: 1.22;
-      letter-spacing: -0.025em;
-      color: var(--cream);
+    /* ── Camera Screen ── */
+    .viewfinder{
+      flex:1;position:relative;background:#000;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
     }
+    .vf-grid{
+      position:absolute;inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
+      background-size:33.33% 33.33%;
+    }
+    .vf-corners::before,.vf-corners::after,
+    .vf-corners span::before,.vf-corners span::after{
+      content:'';position:absolute;width:22px;height:22px;
+      border-color:rgba(255,255,255,.6);border-style:solid;
+    }
+    .vf-corners::before{top:20%;left:20%;border-width:2px 0 0 2px;}
+    .vf-corners::after{top:20%;right:20%;border-width:2px 2px 0 0;}
+    .vf-corners span::before{bottom:20%;left:20%;border-width:0 0 2px 2px;}
+    .vf-corners span::after{bottom:20%;right:20%;border-width:0 2px 2px 0;}
+    .vf-hint{
+      position:absolute;bottom:28%;
+      font-size:13px;color:rgba(255,255,255,.5);letter-spacing:.04em;
+      text-align:center;
+    }
+    .cam-bar{
+      flex-shrink:0;padding:28px 32px 40px;
+      display:flex;align-items:center;justify-content:space-around;
+      background:#000;border-top:1px solid rgba(255,255,255,.06);
+    }
+    .shutter{
+      width:72px;height:72px;border-radius:50%;cursor:pointer;
+      background:#fff;border:4px solid rgba(255,255,255,.3);
+      box-shadow:0 0 0 3px rgba(255,255,255,.15),0 4px 16px rgba(0,0,0,.5);
+      transition:all .2s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .shutter:active{transform:scale(.93);}
+    .cam-side{width:44px;height:44px;border-radius:50%;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+      display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);cursor:pointer;}
+    .cam-processing{
+      position:absolute;inset:0;background:rgba(0,0,0,.85);
+      display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    }
+    .cam-processing.show{display:flex;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin-ring{
+      width:48px;height:48px;border-radius:50%;
+      border:3px solid rgba(255,255,255,.1);border-top-color:var(--slt);
+      animation:spin .9s linear infinite;
+    }
+    .proc-text{font-size:15px;color:var(--slt);}
 
-    .headline-sub {
-      margin-top: 12px;
-      font-size: 14px;
-      font-weight: 300;
-      line-height: 1.65;
-      color: var(--silver);
-      letter-spacing: 0.01em;
+    /* ── Voice Screen ── */
+    .voice-center{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;
     }
+    @keyframes pulse-ring{
+      0%{transform:scale(1);opacity:.6;}
+      100%{transform:scale(2.2);opacity:0;}
+    }
+    .mic-wrap{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;}
+    .p-ring{
+      position:absolute;width:100%;height:100%;border-radius:50%;
+      background:rgba(37,99,235,.25);
+      animation:pulse-ring 2s ease-out infinite;
+    }
+    .p-ring:nth-child(2){animation-delay:.6s;}
+    .p-ring:nth-child(3){animation-delay:1.2s;}
+    .mic-circle{
+      position:relative;z-index:1;
+      width:84px;height:84px;border-radius:50%;
+      background:linear-gradient(145deg,rgba(37,99,235,.5),rgba(14,28,100,.7));
+      border:1.5px solid rgba(147,197,253,.35);
+      display:flex;align-items:center;justify-content:center;
+      color:#93c5fd;
+      box-shadow:0 0 24px rgba(37,99,235,.35);
+    }
+    .voice-status{font-size:18px;font-weight:600;color:var(--cream);letter-spacing:-.01em;}
+    .voice-sub{font-size:13px;font-weight:300;color:var(--silver);letter-spacing:.02em;margin-top:-20px;}
+    @keyframes wave{
+      0%,100%{height:6px;}
+      50%{height:24px;}
+    }
+    .waveform{display:flex;align-items:center;gap:4px;height:32px;}
+    .wave-bar{
+      width:4px;border-radius:2px;background:rgba(37,99,235,.6);
+      animation:wave 1s ease-in-out infinite;
+    }
+    .wave-bar:nth-child(1){animation-delay:.0s;}
+    .wave-bar:nth-child(2){animation-delay:.1s;}
+    .wave-bar:nth-child(3){animation-delay:.2s;}
+    .wave-bar:nth-child(4){animation-delay:.3s;}
+    .wave-bar:nth-child(5){animation-delay:.4s;}
+    .wave-bar:nth-child(6){animation-delay:.3s;}
+    .wave-bar:nth-child(7){animation-delay:.2s;}
+    .wave-bar:nth-child(8){animation-delay:.1s;}
+    .voice-stop{
+      width:100%;max-width:280px;padding:16px;border-radius:16px;
+      background:rgba(255,255,255,.05);border:1px solid var(--border);
+      font-size:15px;font-weight:500;color:var(--silver);
+      cursor:pointer;letter-spacing:.02em;
+      transition:all .25s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .voice-stop:hover{background:rgba(255,255,255,.09);color:var(--cream);}
 
-    /* ─────────────────────────────────────────
-       Section Divider
-    ───────────────────────────────────────── */
-    .divider {
-      height: 1px;
-      margin: 32px 0 30px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(200,200,200,0.12) 20%,
-        rgba(200,200,200,0.12) 80%,
-        transparent 100%
-      );
+    /* ── Notify Bar ── */
+    .notify-bar{
+      display:flex;align-items:center;gap:13px;
+      margin-top:20px;padding:14px 18px;border-radius:15px;cursor:pointer;
+      background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.25);
+      transition:all .3s ease;-webkit-tap-highlight-color:transparent;
     }
+    .notify-bar:hover{background:rgba(37,99,235,.13);}
+    @keyframes pb{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.5);}50%{box-shadow:0 0 0 7px rgba(59,130,246,0);}}
+    .nb-dot{width:9px;height:9px;border-radius:50%;background:#3b82f6;flex-shrink:0;animation:pb 2s ease-in-out infinite;}
+    .nb-texts{flex:1;}
+    .nb-title{font-size:13px;font-weight:600;color:#93c5fd;margin-bottom:2px;}
+    .nb-sub{font-size:11px;color:rgba(147,197,253,.5);}
 
-    /* ─────────────────────────────────────────
-       Action Buttons  — glass + metal
-    ───────────────────────────────────────── */
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    /* ── Modal ── */
+    .modal-overlay{
+      position:fixed;inset:0;z-index:300;
+      background:rgba(0,0,0,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      display:none;align-items:flex-end;justify-content:center;
+      opacity:0;transition:opacity .35s ease;
     }
+    .modal-overlay.visible{opacity:1;}
+    .modal-sheet{
+      width:100%;max-width:430px;max-height:90dvh;overflow-y:auto;
+      background:#0b0b0b;border-radius:28px 28px 0 0;
+      border-top:1px solid var(--border);
+      box-shadow:0 -14px 60px rgba(0,0,0,.9);
+      transform:translateY(100%);
+      transition:transform .42s cubic-bezier(.32,.72,0,1);
+    }
+    .modal-overlay.visible .modal-sheet{transform:translateY(0);}
+    .modal-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.10);margin:14px auto 0;}
+    .modal-body{padding:20px 22px 0;}
+    .modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+    .modal-ttl{font-size:17px;font-weight:700;color:var(--cream);letter-spacing:-.02em;}
+    .modal-x{
+      width:34px;height:34px;border-radius:50%;
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--silver);
+      transition:all .3s ease;
+    }
+    .modal-x:hover{background:rgba(255,255,255,.10);}
+    .trust-badge{
+      display:flex;align-items:center;gap:12px;padding:13px 16px;
+      border-radius:14px;margin-bottom:18px;
+      background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 55%,#2563eb 100%);
+      border:1px solid rgba(147,197,253,.28);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 6px 24px rgba(37,99,235,.35);
+    }
+    .tb-icon{
+      width:42px;height:42px;border-radius:50%;flex-shrink:0;
+      background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .tb-sup{font-size:10px;color:rgba(186,230,253,.75);letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px;}
+    .tb-main{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+    .profile-card{
+      display:flex;align-items:center;gap:16px;padding:16px;
+      border-radius:16px;margin-bottom:22px;
+      background:rgba(255,255,255,.025);border:1px solid var(--border);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .avatar{
+      width:68px;height:68px;border-radius:50%;flex-shrink:0;
+      background:rgba(37,99,235,.18);border:2px solid rgba(37,99,235,.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;font-weight:700;color:#93c5fd;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.5);
+    }
+    .p-name{font-size:18px;font-weight:700;color:var(--cream);letter-spacing:-.015em;margin-bottom:6px;}
+    .plate-row{display:flex;align-items:center;gap:6px;}
+    .plate-chip{
+      font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;
+      background:rgba(200,200,200,.08);border:1px solid rgba(200,200,200,.12);
+      color:var(--dim);letter-spacing:.08em;text-transform:uppercase;
+    }
+    .plate-num{font-size:13px;font-weight:500;color:var(--silver);letter-spacing:.04em;}
+    /* 4-step status */
+    .steps-row{display:flex;align-items:flex-start;}
+    .step-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
+    .step-item:not(:last-child)::after{
+      content:'';position:absolute;top:10px;
+      left:calc(50% + 11px);width:calc(100% - 22px);height:2px;
+      background:rgba(255,255,255,.08);border-radius:1px;
+    }
+    .step-item.s-done:not(:last-child)::after{background:rgba(37,99,235,.55);}
+    .step-dot{
+      width:22px;height:22px;border-radius:50%;z-index:1;position:relative;
+      display:flex;align-items:center;justify-content:center;margin-bottom:8px;
+      border:1.5px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);
+    }
+    .step-item.s-done .step-dot{background:#1d4ed8;border-color:#2563eb;box-shadow:0 0 10px rgba(37,99,235,.45);}
+    @keyframes sg{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.55),0 0 12px rgba(34,197,94,.4);}50%{box-shadow:0 0 0 6px rgba(34,197,94,0),0 0 12px rgba(34,197,94,.4);}}
+    .step-item.s-active .step-dot{background:rgba(34,197,94,.12);border-color:#22c55e;animation:sg 2s ease-in-out infinite;}
+    .s-inner{width:8px;height:8px;border-radius:50%;background:#4ade80;}
+    .step-lbl{font-size:10px;color:var(--dim);text-align:center;line-height:1.35;}
+    .step-item.s-done .step-lbl{color:var(--silver);}
+    .step-item.s-active .step-lbl{color:#4ade80;font-weight:600;}
+    /* approval */
+    .approval-wrap{padding:24px 22px 32px;}
+    .appr-btn{
+      width:100%;min-height:80px;border-radius:22px;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+      background:linear-gradient(150deg,#16a34a 0%,#15803d 100%);
+      border:1px solid rgba(74,222,128,.22);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 6px rgba(0,0,0,.22),0 10px 36px rgba(22,163,74,.38);
+      transition:all .32s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .appr-btn:hover{transform:translateY(1px);box-shadow:inset 0 3px 10px rgba(0,0,0,.3);}
+    .appr-btn:active{transform:translateY(2px);}
+    .appr-main{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+    .appr-sub{font-size:12px;color:rgba(255,255,255,.65);}
+    .completion-msg{
+      display:none;flex-direction:column;align-items:center;gap:16px;
+      padding:28px 16px 6px;text-align:center;
+      opacity:0;transition:opacity .5s ease;
+    }
+    .completion-msg.visible{opacity:1;}
+    .comp-icon{
+      width:64px;height:64px;border-radius:50%;
+      background:rgba(34,197,94,.10);border:1.5px solid rgba(34,197,94,.28);
+      display:flex;align-items:center;justify-content:center;color:#4ade80;
+      box-shadow:0 0 24px rgba(34,197,94,.20);
+    }
+    .comp-text{font-size:20px;font-weight:700;color:var(--cream);line-height:1.45;letter-spacing:-.02em;}
 
-    .action-btn {
-      position: relative;
-      min-height: 112px;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      padding: 28px 26px;
-      border-radius: 24px;
-      cursor: pointer;
-      text-align: left;
-      overflow: hidden;
+    /* ── Emergency ── */
+    @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-9px);}40%{transform:translateX(9px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+    .shake{animation:shake .42s ease-in-out;}
+    .emergency-screen{
+      position:fixed;inset:0;z-index:200;
+      background:#dd6b20;display:none;
+      flex-direction:column;align-items:center;justify-content:center;padding:32px;
+      opacity:0;transition:opacity .45s ease;
+    }
+    .emergency-screen.visible{opacity:1;}
+    .call-btn{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+      width:100%;max-width:360px;min-height:220px;padding:40px 28px;
+      border-radius:28px;text-decoration:none;text-align:center;color:#fff;
+      background:rgba(0,0,0,.18);border:2px solid rgba(255,255,255,.32);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 16px 48px rgba(0,0,0,.28);
+      transition:all .3s ease;-webkit-tap-highlight-color:transparent;
+    }
+    .call-btn:hover{background:rgba(0,0,0,.25);transform:translateY(1px);}
+    .call-icon-wrap{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;}
+    .call-btn-title{font-size:26px;font-weight:700;line-height:1.35;letter-spacing:-.02em;color:#fff;}
+    .call-btn-number{font-size:20px;font-weight:500;letter-spacing:.06em;color:rgba(255,255,255,.8);}
 
-      /* glass base */
-      background:
-        linear-gradient(
-          150deg,
-          rgba(30, 30, 30, 0.85) 0%,
-          rgba(12, 12, 12, 0.92) 100%
-        );
+    /* bottom hint */
+    .bottom-hint{margin-top:32px;text-align:center;}
+    .bh-text{font-size:11px;font-weight:300;color:var(--muted);letter-spacing:.12em;}
+    .bh-line{display:inline-block;width:28px;height:1px;background:var(--muted);opacity:.4;vertical-align:middle;margin:0 10px;}
 
-      /* edge definition */
-      border: 1px solid var(--glass-border);
-
-      /* depth + glass reflection */
-      box-shadow:
-        /* inner top highlight — light catching rim */
-        inset 0 1px 0   rgba(255,255,255,0.075),
-        /* inner bottom shadow — depth */
-        inset 0 -2px 6px rgba(0,0,0,0.55),
-        /* inner side ambient */
-        inset 1px 0 4px  rgba(255,255,255,0.02),
-        /* outer lift shadow */
-        0 10px 40px rgba(0,0,0,0.70),
-        0 2px  8px  rgba(0,0,0,0.50),
-        /* very subtle outer silver edge glow */
-        0 0 0 0.5px rgba(180,180,180,0.06);
-
-      /* glass blur */
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-
-      transition: all 0.35s ease-in-out;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* top metallic sheen line */
-    .action-btn::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 12%; right: 12%;
-      height: 1px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255,255,255,0.10) 40%,
-        rgba(255,255,255,0.10) 60%,
-        transparent 100%
-      );
-    }
-
-    /* left-side ambient light */
-    .action-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      background: radial-gradient(
-        ellipse 50% 65% at 12% 50%,
-        rgba(255,255,255,0.032) 0%,
-        transparent 65%
-      );
-      pointer-events: none;
-    }
-
-    /* ── hover: background deepens, rim brightens ── */
-    .action-btn:hover {
-      background:
-        linear-gradient(
-          150deg,
-          rgba(18, 18, 18, 0.90) 0%,
-          rgba(6, 6, 6, 0.96) 100%
-        );
-      border-color: rgba(210, 210, 210, 0.18);
-      box-shadow:
-        inset 0 2px 8px  rgba(0,0,0,0.80),
-        inset 0 -1px 4px rgba(0,0,0,0.60),
-        0 6px 24px rgba(0,0,0,0.80),
-        0 1px 6px  rgba(0,0,0,0.60);
-      transform: translateY(1px);
-    }
-
-    /* ── active / touch: pressed into the surface ── */
-    .action-btn:active {
-      background:
-        linear-gradient(
-          150deg,
-          rgba(10, 10, 10, 0.95) 0%,
-          rgba(4, 4, 4, 0.98) 100%
-        );
-      border-color: rgba(180, 180, 180, 0.12);
-      box-shadow:
-        inset 0 5px 16px rgba(0,0,0,1),
-        inset 0 -1px 4px rgba(0,0,0,0.80),
-        0 3px 12px rgba(0,0,0,0.90);
-      transform: translateY(2px);
-    }
-
-    /* ── icon container — inset panel ── */
-    .btn-icon-box {
-      position: relative;
-      z-index: 1;
-      width: 62px; height: 62px;
-      flex-shrink: 0;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--silver-lt);
-
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(200,200,200,0.09);
-      box-shadow:
-        inset 0 2px 6px rgba(0,0,0,0.65),
-        inset 0 1px 0   rgba(255,255,255,0.055),
-        0 1px 3px rgba(255,255,255,0.015);
-    }
-
-    /* ── text ── */
-    .btn-texts {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-    }
-
-    .btn-title {
-      font-size: 19px;
-      font-weight: 600;
-      color: var(--cream);
-      letter-spacing: -0.015em;
-      margin-bottom: 6px;
-    }
-
-    .btn-desc {
-      font-size: 12px;
-      font-weight: 300;
-      color: var(--silver);
-      letter-spacing: 0.03em;
-      line-height: 1.5;
-      opacity: 0.65;
-    }
-
-    /* ── chevron ── */
-    .btn-chevron {
-      position: relative;
-      z-index: 1;
-      flex-shrink: 0;
-      color: var(--silver-dim);
-      transition: all 0.35s ease-in-out;
-    }
-    .action-btn:hover .btn-chevron {
-      color: var(--silver-lt);
-      transform: translateX(4px);
-    }
-
-    /* ─────────────────────────────────────────
-       Bottom hint
-    ───────────────────────────────────────── */
-    .bottom-hint {
-      margin-top: 36px;
-      text-align: center;
-    }
-    .bottom-hint-text {
-      font-size: 11px;
-      font-weight: 300;
-      color: var(--muted);
-      letter-spacing: 0.12em;
-    }
-    .bottom-hint-line {
-      display: inline-block;
-      width: 28px;
-      height: 1px;
-      background: var(--muted);
-      opacity: 0.4;
-      vertical-align: middle;
-      margin: 0 10px;
-    }
-
-    /* ─────────────────────────────────────────
-       Assignment Notification Bar (modal trigger)
-    ───────────────────────────────────────── */
-    .notify-bar {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-top: 24px;
-      padding: 15px 18px;
-      border-radius: 16px;
-      cursor: pointer;
-      background: rgba(37, 99, 235, 0.07);
-      border: 1px solid rgba(37, 99, 235, 0.28);
-      box-shadow: inset 0 1px 0 rgba(147,197,253,0.08);
-      transition: all 0.3s ease-in-out;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .notify-bar:hover  { background: rgba(37,99,235,0.13); border-color: rgba(37,99,235,0.40); }
-    .notify-bar:active { transform: scale(0.99); }
-
-    @keyframes pulse-blue {
-      0%, 100% { box-shadow: 0 0 0 0   rgba(59,130,246,0.55); }
-      50%       { box-shadow: 0 0 0 7px rgba(59,130,246,0); }
-    }
-    .notify-pulse {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: #3b82f6;
-      flex-shrink: 0;
-      animation: pulse-blue 2s ease-in-out infinite;
-    }
-    .notify-texts { flex: 1; }
-    .notify-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #93c5fd;
-      margin-bottom: 2px;
-    }
-    .notify-sub {
-      font-size: 11px;
-      font-weight: 300;
-      color: rgba(147,197,253,0.55);
-    }
-    .notify-chevron { color: rgba(147,197,253,0.50); flex-shrink: 0; }
-
-    /* ─────────────────────────────────────────
-       Modal Overlay
-    ───────────────────────────────────────── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 300;
-      background: rgba(0,0,0,0.72);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.35s ease-in-out;
-    }
-    .modal-overlay.visible { opacity: 1; }
-
-    /* ─── Bottom Sheet ─── */
-    .modal-sheet {
-      width: 100%;
-      max-width: 430px;
-      max-height: 90dvh;
-      overflow-y: auto;
-      background: #0b0b0b;
-      border-radius: 28px 28px 0 0;
-      border-top: 1px solid rgba(200,200,200,0.09);
-      box-shadow: 0 -14px 60px rgba(0,0,0,0.90);
-      transform: translateY(100%);
-      transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    .modal-overlay.visible .modal-sheet { transform: translateY(0); }
-
-    .modal-handle {
-      width: 40px; height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.10);
-      margin: 14px auto 0;
-    }
-
-    /* ─── Modal Header ─── */
-    .modal-body { padding: 20px 22px 0; }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 18px;
-    }
-    .modal-title-text {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--cream);
-      letter-spacing: -0.02em;
-    }
-    .modal-close {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      color: var(--silver);
-      transition: all 0.3s ease-in-out;
-    }
-    .modal-close:hover { background: rgba(255,255,255,0.10); }
-
-    /* ─── Trust Badge ─── */
-    .trust-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 13px 16px;
-      border-radius: 14px;
-      margin-bottom: 18px;
-      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);
-      border: 1px solid rgba(147,197,253,0.28);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        inset 0 -1px 0 rgba(0,0,0,0.20),
-        0 6px 24px rgba(37,99,235,0.35);
-    }
-    .trust-badge-icon {
-      width: 42px; height: 42px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.14);
-      border: 1.5px solid rgba(255,255,255,0.28);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.20);
-    }
-    .trust-badge-sup {
-      font-size: 10px;
-      font-weight: 400;
-      color: rgba(186,230,253,0.75);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin-bottom: 3px;
-    }
-    .trust-badge-main {
-      font-size: 15px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-    }
-
-    /* ─── Profile Card ─── */
-    .profile-card {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px;
-      border-radius: 16px;
-      margin-bottom: 22px;
-      background: rgba(255,255,255,0.025);
-      border: 1px solid var(--glass-border);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        0 4px 18px rgba(0,0,0,0.50);
-    }
-    .profile-avatar {
-      width: 68px; height: 68px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.055);
-      border: 1.5px solid rgba(200,200,200,0.14);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      color: var(--silver-dim);
-      box-shadow:
-        inset 0 2px 6px rgba(0,0,0,0.55),
-        inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-    .profile-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--cream);
-      letter-spacing: -0.015em;
-      margin-bottom: 6px;
-    }
-    .profile-plate-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .plate-chip {
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: rgba(200,200,200,0.08);
-      border: 1px solid rgba(200,200,200,0.12);
-      color: var(--silver-dim);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .plate-number {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--silver);
-      letter-spacing: 0.04em;
-    }
-
-    /* ─── 4-Step Status Bar ─── */
-    .status-bar-section { margin-bottom: 6px; }
-    .status-bar-label {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--silver-dim);
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-    }
-    .steps-row {
-      display: flex;
-      align-items: flex-start;
-    }
-    .step-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-    }
-    /* connector line: right edge of dot → left edge of next dot */
-    .step-item:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      top: 10px;
-      left: calc(50% + 11px);
-      width: calc(100% - 22px);
-      height: 2px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 1px;
-    }
-    .step-item.s-done:not(:last-child)::after {
-      background: rgba(37,99,235,0.55);
-    }
-
-    .step-dot {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      border: 1.5px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.04);
-      position: relative;
-      z-index: 1;
-      margin-bottom: 8px;
-    }
-    .step-item.s-done .step-dot {
-      background: #1d4ed8;
-      border-color: #2563eb;
-      box-shadow: 0 0 10px rgba(37,99,235,0.45);
-    }
-    @keyframes step-glow {
-      0%, 100% { box-shadow: 0 0 0 0   rgba(34,197,94,0.55), 0 0 12px rgba(34,197,94,0.40); }
-      50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0),    0 0 12px rgba(34,197,94,0.40); }
-    }
-    .step-item.s-active .step-dot {
-      background: rgba(34,197,94,0.12);
-      border-color: #22c55e;
-      animation: step-glow 2s ease-in-out infinite;
-    }
-    .s-active-inner {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-    }
-    .step-label {
-      font-size: 10px;
-      font-weight: 400;
-      color: var(--silver-dim);
-      text-align: center;
-      line-height: 1.35;
-      letter-spacing: 0.01em;
-    }
-    .step-item.s-done   .step-label { color: var(--silver); }
-    .step-item.s-active .step-label { color: #4ade80; font-weight: 600; }
-
-    /* ─── Approval CTA ─── */
-    .approval-wrap { padding: 24px 22px 32px; }
-
-    .approval-btn {
-      width: 100%;
-      min-height: 82px;
-      border-radius: 22px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      background: linear-gradient(150deg, #16a34a 0%, #15803d 100%);
-      border: 1px solid rgba(74,222,128,0.22);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        inset 0 -2px 6px rgba(0,0,0,0.22),
-        0 10px 36px rgba(22,163,74,0.38);
-      transition: all 0.35s ease-in-out;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .approval-btn:hover {
-      background: linear-gradient(150deg, #15803d 0%, #166534 100%);
-      box-shadow:
-        inset 0 3px 10px rgba(0,0,0,0.32),
-        0 5px 20px rgba(22,163,74,0.25);
-      transform: translateY(1px);
-    }
-    .approval-btn:active {
-      transform: translateY(2px);
-      box-shadow:
-        inset 0 5px 16px rgba(0,0,0,0.50),
-        0 2px 10px rgba(22,163,74,0.18);
-    }
-    .approval-main {
-      font-size: 17px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-    }
-    .approval-sub {
-      font-size: 12px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.65);
-      letter-spacing: 0.02em;
-    }
-
-    /* ─── Completion Message (fades in after approval) ─── */
-    .completion-msg {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      padding: 28px 16px 6px;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.50s ease-in-out;
-    }
-    .completion-msg.visible { opacity: 1; }
-    .completion-icon {
-      width: 64px; height: 64px;
-      border-radius: 50%;
-      background: rgba(34,197,94,0.10);
-      border: 1.5px solid rgba(34,197,94,0.28);
-      display: flex; align-items: center; justify-content: center;
-      color: #4ade80;
-      box-shadow: 0 0 24px rgba(34,197,94,0.20);
-    }
-    .completion-text {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--cream);
-      line-height: 1.45;
-      letter-spacing: -0.02em;
-    }
-
-    /* ─────────────────────────────────────────
-       Error feedback — shake (failCount = 1)
-    ───────────────────────────────────────── */
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%       { transform: translateX(-9px); }
-      40%       { transform: translateX(9px); }
-      60%       { transform: translateX(-5px); }
-      80%       { transform: translateX(5px); }
-    }
-    .shake { animation: shake 0.42s ease-in-out; }
-
-    /* ─────────────────────────────────────────
-       Emergency Screen (failCount = 2)
-    ───────────────────────────────────────── */
-    .emergency-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: #dd6b20;
-      display: none;            /* JS로 flex 전환 */
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
-      opacity: 0;
-      transition: opacity 0.45s ease-in-out;
-    }
-    .emergency-screen.visible { opacity: 1; }
-
-    .call-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 22px;
-      width: 100%;
-      max-width: 360px;
-      min-height: 220px;
-      padding: 40px 28px;
-      border-radius: 28px;
-      text-decoration: none;
-      text-align: center;
-      color: #ffffff;
-
-      background: rgba(0, 0, 0, 0.18);
-      border: 2px solid rgba(255, 255, 255, 0.32);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.28),
-        inset 0 -2px 8px rgba(0,0,0,0.20),
-        0 16px 48px rgba(0,0,0,0.28);
-
-      transition: all 0.3s ease-in-out;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .call-btn:hover  { background: rgba(0,0,0,0.25); transform: translateY(1px); }
-    .call-btn:active { background: rgba(0,0,0,0.32); transform: translateY(3px); }
-
-    .call-icon-wrap {
-      width: 72px; height: 72px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.30);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .call-btn-title {
-      font-size: 26px;
-      font-weight: 700;
-      line-height: 1.35;
-      letter-spacing: -0.02em;
-      color: #fff;
-    }
-
-    .call-btn-number {
-      font-size: 20px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      color: rgba(255,255,255,0.80);
-    }
+    /* scrollbar hide */
+    .screen::-webkit-scrollbar{display:none;}
+    .screen{-ms-overflow-style:none;scrollbar-width:none;}
   </style>
 </head>
 <body>
 
-  <!-- Ambient background layers -->
-  <div class="bg-layer" aria-hidden="true"></div>
+<!-- ════════════════════════════════
+     SCREEN: MAIN
+════════════════════════════════ -->
+<div id="s-main" class="screen active" style="overflow-y:auto;">
+  <div class="amb" aria-hidden="true"></div>
 
-  <div id="main-content" class="shell">
+  <div style="position:relative;z-index:1;padding:0 22px 40px;display:flex;flex-direction:column;min-height:100dvh;">
 
-    <!-- ── Header ── -->
-    <header class="header">
-      <div class="logo">Suri<strong>Suri</strong></div>
-
-      <div class="header-status" aria-label="서비스 상태">
-        <span class="status-dot"></span>
-        <span class="status-text">PREMIUM CARE</span>
+    <!-- header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:54px;padding-bottom:8px;">
+      <div class="logo">Suri<b>Suri</b></div>
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(22,22,22,.72);border:1px solid var(--border);border-radius:100px;padding:5px 12px;backdrop-filter:blur(12px);">
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--slt);opacity:.5;display:inline-block;"></span>
+        <span style="font-size:10px;color:var(--silver);letter-spacing:.12em;">PREMIUM CARE</span>
       </div>
-    </header>
+    </div>
 
-    <!-- ── Headline ── -->
-    <section class="headline-section">
-      <p class="eyebrow">Residence Management</p>
-      <h1 class="headline">무엇을<br>도와드릴까요?</h1>
-      <p class="headline-sub">
-        고장이나 불편한 점을 알려주시면<br>
-        신속하게 처리해 드리겠습니다.
-      </p>
-    </section>
+    <!-- headline -->
+    <div style="padding:34px 0 10px;">
+      <p style="font-size:11px;font-weight:300;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;margin-bottom:14px;">Residence Management</p>
+      <h1 style="font-size:30px;font-weight:700;line-height:1.22;letter-spacing:-.025em;color:var(--cream);">무엇을<br>도와드릴까요?</h1>
+      <p style="margin-top:10px;font-size:14px;font-weight:300;line-height:1.65;color:var(--silver);">고장이나 불편한 점을 알려주시면<br>신속하게 처리해 드리겠습니다.</p>
+    </div>
 
-    <div class="divider" aria-hidden="true"></div>
+    <div class="divider"></div>
 
-    <!-- ── Action Buttons ── -->
-    <section class="actions" aria-label="진단 방법 선택">
+    <!-- 3 action buttons -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
 
-      <!-- 사진으로 진단받기 -->
-      <button class="action-btn" onclick="handleCamera(this)" aria-label="사진으로 진단받기">
-        <div class="btn-icon-box" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2
-                     V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
+      <button class="g-btn" onclick="goTo('camera')" aria-label="사진으로 진단받기">
+        <div class="icon-box">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
           </svg>
         </div>
-        <div class="btn-texts">
-          <div class="btn-title">사진으로 진단받기</div>
-          <div class="btn-desc">고장 부위를 촬영하면<br>바로 접수됩니다</div>
+        <div class="btn-txts">
+          <div class="btn-main">사진으로 진단받기</div>
+          <div class="btn-sub">고장 부위를 촬영하면 바로 접수됩니다</div>
         </div>
-        <svg class="btn-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <svg class="btn-chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-      <!-- 음성으로 진단받기 -->
-      <button class="action-btn" onclick="handleVoice(this)" aria-label="음성으로 진단받기">
-        <div class="btn-icon-box" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="1.5"
-               stroke-linecap="round" stroke-linejoin="round">
+      <button class="g-btn" onclick="goTo('voice')" aria-label="음성으로 진단받기">
+        <div class="icon-box">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8"  y1="23" x2="16" y2="23"/>
+            <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
           </svg>
         </div>
-        <div class="btn-texts">
-          <div class="btn-title">음성으로 진단받기</div>
-          <div class="btn-desc">말씀해 주시면<br>바로 접수해 드립니다</div>
+        <div class="btn-txts">
+          <div class="btn-main">음성으로 진단받기</div>
+          <div class="btn-sub">말씀해 주시면 바로 접수해 드립니다</div>
         </div>
-        <svg class="btn-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <svg class="btn-chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-    </section>
+      <button class="g-btn accent" onclick="goTo('manual')" aria-label="직접 문제 선택하기">
+        <div class="icon-box blue">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="btn-txts">
+          <div class="btn-main" style="color:#e0ecff;">직접 문제 선택하기</div>
+          <div class="btn-sub">12가지 항목에서 바로 찾기</div>
+        </div>
+        <svg class="btn-chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
 
-    <!-- ── Assignment Notification (모달 트리거) ── -->
-    <div class="notify-bar" onclick="openManagerModal()"
-         role="button" tabindex="0"
-         aria-label="기사 배정 알림 — 확인하기">
-      <span class="notify-pulse" aria-hidden="true"></span>
-      <div class="notify-texts">
-        <div class="notify-title">기사가 배정되었습니다</div>
-        <div class="notify-sub">김수리 마스터 · 탭하여 확인하기</div>
+    </div>
+
+    <!-- notify bar -->
+    <div class="notify-bar" onclick="openManagerModal()" role="button" tabindex="0">
+      <span class="nb-dot" aria-hidden="true"></span>
+      <div class="nb-texts">
+        <div class="nb-title">기사가 배정되었습니다</div>
+        <div class="nb-sub">김수리 마스터 · 탭하여 확인하기</div>
       </div>
-      <svg class="notify-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(147,197,253,.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
 
-    <!-- ── Bottom Hint ── -->
     <div class="bottom-hint">
-      <span class="bottom-hint-line"></span>
-      <span class="bottom-hint-text">24시간 접수 가능</span>
-      <span class="bottom-hint-line"></span>
+      <span class="bh-line"></span>
+      <span class="bh-text">24시간 접수 가능</span>
+      <span class="bh-line"></span>
     </div>
 
-  </div><!-- /.shell -->
+  </div>
+</div>
 
-  <!-- ══════════════════════════════════════════
-       Manager Modal
-  ══════════════════════════════════════════ -->
-  <div id="manager-modal" class="modal-overlay"
-       onclick="handleOverlayClick(event)">
-    <div class="modal-sheet"
-         role="dialog" aria-modal="true" aria-labelledby="modal-title-id">
 
-      <!-- drag handle -->
-      <div class="modal-handle" aria-hidden="true"></div>
+<!-- ════════════════════════════════
+     SCREEN: CAMERA
+════════════════════════════════ -->
+<div id="s-camera" class="screen" style="background:#000;">
+  <div class="s-header no-border" style="background:rgba(0,0,0,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+    <button class="back-btn" onclick="goBack()" style="background:rgba(255,255,255,.1);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="s-title" style="color:rgba(255,255,255,.85);">사진으로 진단받기</span>
+    <div class="s-header-spacer"></div>
+  </div>
 
-      <div class="modal-body">
+  <div class="viewfinder">
+    <div class="vf-grid"></div>
+    <div class="vf-corners" style="position:absolute;inset:18% 18%;"><span></span></div>
+    <div class="vf-hint">고장 부위가 화면 안에 오도록<br>카메라를 맞춰주세요</div>
+    <!-- processing overlay -->
+    <div id="cam-proc" class="cam-processing">
+      <div class="spin-ring"></div>
+      <div class="proc-text">AI가 분석하고 있어요...</div>
+    </div>
+  </div>
 
-        <!-- header -->
-        <div class="modal-header">
-          <span id="modal-title-id" class="modal-title-text">안심 매니저 정보</span>
-          <button class="modal-close" onclick="closeManagerModal()" aria-label="닫기">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6"  y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
+  <div class="cam-bar">
+    <div class="cam-side">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <button class="shutter" onclick="capturePhoto()" aria-label="촬영하기"></button>
+    <div class="cam-side">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>
+    </div>
+  </div>
+</div>
 
-        <!-- ─── Trust Badge ─── -->
-        <div class="trust-badge" aria-label="안심 인증 완료 배지">
-          <div class="trust-badge-icon" aria-hidden="true">
-            <!-- shield-check icon -->
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                 stroke="#ffffff" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <polyline points="9 12 11 14 15 10"/>
-            </svg>
-          </div>
-          <div>
-            <div class="trust-badge-sup">VERIFIED PROFESSIONAL</div>
-            <div class="trust-badge-main">안심 인증 완료</div>
-          </div>
-        </div>
 
-        <!-- ─── Profile Card ─── -->
-        <div class="profile-card">
-          <!-- avatar placeholder -->
-          <div class="profile-avatar" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.5"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <div>
-            <div class="profile-name">김수리 마스터</div>
-            <div class="profile-plate-row">
-              <span class="plate-chip">차량</span>
-              <span class="plate-number">서울 12가 3456</span>
-            </div>
-          </div>
-        </div>
+<!-- ════════════════════════════════
+     SCREEN: VOICE
+════════════════════════════════ -->
+<div id="s-voice" class="screen">
+  <div class="s-header">
+    <button class="back-btn" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="s-title">음성으로 진단받기</span>
+    <div class="s-header-spacer"></div>
+  </div>
 
-        <!-- ─── 4-Step Status Bar ─── -->
-        <div class="status-bar-section">
-          <div class="status-bar-label">작업 진행 상태</div>
-          <div class="steps-row" role="list" aria-label="작업 단계">
-
-            <!-- Step 1: 결제완료 (done) -->
-            <div class="step-item s-done" role="listitem" aria-label="결제완료 완료">
-              <div class="step-dot" aria-hidden="true">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                     stroke="#ffffff" stroke-width="3"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="step-label">결제<br>완료</div>
-            </div>
-
-            <!-- Step 2: 출발 (done) -->
-            <div class="step-item s-done" role="listitem" aria-label="출발 완료">
-              <div class="step-dot" aria-hidden="true">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                     stroke="#ffffff" stroke-width="3"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="step-label">출발</div>
-            </div>
-
-            <!-- Step 3: 작업중 (done) -->
-            <div class="step-item s-done" role="listitem" aria-label="작업중 완료">
-              <div class="step-dot" aria-hidden="true">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                     stroke="#ffffff" stroke-width="3"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </div>
-              <div class="step-label">작업중</div>
-            </div>
-
-            <!-- Step 4: 승인대기 (active / current) -->
-            <div class="step-item s-active" role="listitem" aria-current="step" aria-label="승인대기 현재 단계">
-              <div class="step-dot" aria-hidden="true">
-                <div class="s-active-inner"></div>
-              </div>
-              <div class="step-label">승인<br>대기</div>
-            </div>
-
-          </div><!-- /.steps-row -->
-        </div><!-- /.status-bar-section -->
-
-      </div><!-- /.modal-body -->
-
-      <!-- ─── Approval CTA + Completion Message ─── -->
-      <div class="approval-wrap">
-
-        <button id="approval-btn" class="approval-btn"
-                onclick="handleApproval()"
-                aria-label="수리 완료 승인 및 정산하기">
-          <span class="approval-main">수리가 안전하게 완료되었습니다</span>
-          <span class="approval-sub">눌러서 정산하기</span>
-        </button>
-
-        <div id="completion-msg" class="completion-msg" role="status" aria-live="polite">
-          <div class="completion-icon" aria-hidden="true">
-            <!-- lock icon -->
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.8"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div class="completion-text">
-            문이 잘 잠겼는지<br>한 번 더 확인하세요!
-          </div>
-        </div>
-
-      </div><!-- /.approval-wrap -->
-
-    </div><!-- /.modal-sheet -->
-  </div><!-- /#manager-modal -->
-
-  <!-- ── Emergency Screen (failCount ≥ 2) ── -->
-  <div id="emergency-screen" class="emergency-screen" role="alert" aria-live="assertive" aria-atomic="true">
-    <a href="tel:02-1234-5678" class="call-btn" aria-label="상담원에게 전화하기 02-1234-5678">
-
-      <!-- phone icon -->
-      <div class="call-icon-wrap" aria-hidden="true">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-             stroke="#ffffff" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2
-                   A19.79 19.79 0 0 1 3.08 4.18
-                   2 2 0 0 1 5.09 2h3a2 2 0 0 1 2 1.72
-                   c.127.96.361 1.903.7 2.81
-                   a2 2 0 0 1-.45 2.11L9.09 9.91
-                   a16 16 0 0 0 6 6l1.27-1.27
-                   a2 2 0 0 1 2.11-.45
-                   c.907.339 1.85.573 2.81.7
-                   A2 2 0 0 1 22 16.92z"/>
+  <div class="voice-center">
+    <div class="mic-wrap">
+      <div class="p-ring"></div>
+      <div class="p-ring"></div>
+      <div class="p-ring"></div>
+      <div class="mic-circle">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
       </div>
+    </div>
 
-      <div class="call-btn-title">
-        인식이 잘 안 되시나요?<br>상담원에게 바로 전화하기
+    <div class="waveform" id="voice-wave">
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div>
+    </div>
+
+    <div>
+      <div class="voice-status" id="voice-status">듣고 있어요...</div>
+      <div class="voice-sub" style="margin-top:8px;text-align:center;">불편하신 점을 말씀해 주세요</div>
+    </div>
+
+    <button class="voice-stop" onclick="stopVoice()" id="voice-stop-btn">인식 완료 · 접수하기</button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     SCREEN: MANUAL (카테고리)
+════════════════════════════════ -->
+<div id="s-manual" class="screen" style="overflow-y:auto;">
+  <div class="s-header">
+    <button class="back-btn" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="s-title">어떤 문제가 생겼나요?</span>
+    <div class="s-header-spacer"></div>
+  </div>
+
+  <div style="padding:16px 22px 40px;">
+    <p style="font-size:12px;color:var(--silver);margin-bottom:20px;letter-spacing:.02em;line-height:1.55;">
+      대한민국 1인 가구에서 가장 자주 발생하는<br>12가지 문제를 선택해 전문가를 연결해드려요.
+    </p>
+
+    <div class="cat-grid" id="cat-grid">
+      <!-- JS로 렌더링 -->
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     SCREEN: SUBCATEGORY
+════════════════════════════════ -->
+<div id="s-subcategory" class="screen" style="overflow-y:auto;">
+  <div class="s-header">
+    <button class="back-btn" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="s-title" id="sub-screen-title">세부 문제 선택</span>
+    <div class="s-header-spacer"></div>
+  </div>
+
+  <div style="padding:16px 22px 40px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid var(--border);margin-bottom:24px;" id="sub-cat-info"></div>
+    <p class="sec-label">어떤 증상인가요?</p>
+    <div class="sub-list" id="sub-list"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     SCREEN: REQUEST
+════════════════════════════════ -->
+<div id="s-request" class="screen" style="overflow-y:auto;">
+  <div class="s-header">
+    <button class="back-btn" onclick="goBack()" id="req-back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="s-title">접수 확인</span>
+    <div class="s-header-spacer"></div>
+  </div>
+
+  <div style="padding:16px 22px 0;flex:1;" id="req-form-area">
+    <div class="req-summary">
+      <div class="req-tag" id="req-tag"></div>
+      <div class="req-problem" id="req-problem">문제 항목</div>
+      <div class="req-desc" id="req-desc"></div>
+    </div>
+
+    <p class="sec-label">방문 희망 시간</p>
+    <div class="time-grid" id="time-grid">
+      <div class="time-chip" onclick="selectTime(this)">오늘 오후</div>
+      <div class="time-chip" onclick="selectTime(this)">내일 오전</div>
+      <div class="time-chip" onclick="selectTime(this)">내일 오후</div>
+      <div class="time-chip" onclick="selectTime(this)">모레 오전</div>
+      <div class="time-chip" onclick="selectTime(this)">모레 오후</div>
+      <div class="time-chip" onclick="selectTime(this)">날짜 협의</div>
+    </div>
+
+    <p class="sec-label">추가 메모 <span style="color:var(--dim);font-weight:300;">(선택)</span></p>
+    <textarea id="req-memo" placeholder="증상을 더 자세히 설명해주시면 빠른 처리가 가능해요."
+      style="width:100%;min-height:80px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;color:var(--cream);resize:none;font-family:inherit;line-height:1.6;outline:none;margin-bottom:24px;"></textarea>
+
+    <button class="req-btn" onclick="submitRequest()">
+      <span class="req-btn-main">전문가 연결 접수하기</span>
+      <span class="req-btn-sub">평균 30분 내 매칭</span>
+    </button>
+    <div style="height:32px;"></div>
+  </div>
+
+  <!-- success state (hidden) -->
+  <div class="success-wrap" id="success-wrap">
+    <div class="success-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-title">접수가 완료됐어요!</div>
+    <div class="success-sub" id="success-problem-text"></div>
+    <div class="success-eta">⏱ 담당 기사 매칭 중...</div>
+    <button onclick="goTo('main')" style="margin-top:8px;padding:14px 32px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--silver);cursor:pointer;letter-spacing:.02em;transition:all .25s ease;">메인으로 돌아가기</button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     MODAL: MANAGER
+════════════════════════════════ -->
+<div id="manager-modal" class="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet" role="dialog" aria-modal="true">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-body">
+      <div class="modal-hdr">
+        <span class="modal-ttl">안심 매니저 정보</span>
+        <button class="modal-x" onclick="closeManagerModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
+      <div class="trust-badge">
+        <div class="tb-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
+        <div><div class="tb-sup">VERIFIED PROFESSIONAL</div><div class="tb-main">안심 인증 완료</div></div>
+      </div>
+      <div class="profile-card">
+        <div class="avatar">김</div>
+        <div>
+          <div class="p-name">김수리 마스터</div>
+          <div class="plate-row">
+            <span class="plate-chip">차량</span>
+            <span class="plate-num">서울 12가 3456</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:28px;">
+        <p class="sec-label" style="margin-bottom:18px;">작업 진행 상태</p>
+        <div class="steps-row" role="list">
+          <div class="step-item s-done" role="listitem"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="step-lbl">결제<br>완료</div></div>
+          <div class="step-item s-done" role="listitem"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="step-lbl">출발</div></div>
+          <div class="step-item s-done" role="listitem"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="step-lbl">작업중</div></div>
+          <div class="step-item s-active" role="listitem" aria-current="step"><div class="step-dot"><div class="s-inner"></div></div><div class="step-lbl">승인<br>대기</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="approval-wrap">
+      <button id="approval-btn" class="appr-btn" onclick="handleApproval()">
+        <span class="appr-main">수리가 안전하게 완료되었습니다</span>
+        <span class="appr-sub">눌러서 정산하기</span>
+      </button>
+      <div id="completion-msg" class="completion-msg">
+        <div class="comp-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="comp-text">문이 잘 잠겼는지<br>한 번 더 확인하세요!</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      <div class="call-btn-number">02-1234-5678</div>
+<!-- EMERGENCY -->
+<div id="emergency-screen" class="emergency-screen" role="alert" aria-live="assertive">
+  <a href="tel:02-1234-5678" class="call-btn">
+    <div class="call-icon-wrap"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1.26h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+    <div class="call-btn-title">인식이 잘 안 되시나요?<br>상담원에게 바로 전화하기</div>
+    <div class="call-btn-number">02-1234-5678</div>
+  </a>
+</div>
 
-    </a>
-  </div><!-- /#emergency-screen -->
 
-  <script>
-    /* ══════════════════════════════════════════
-       Manager Modal
-    ══════════════════════════════════════════ */
+<script>
+/* ════════════════════════════════
+   카테고리 데이터 (1인 가구 여성 조사 기반)
+════════════════════════════════ */
+const CATS = [
+  {
+    id:'doorlock', label:'도어락 & 보안', count:'5가지 증상', urgent:true,
+    color:'#2563eb', bg:'rgba(37,99,235,.15)', border:'rgba(37,99,235,.25)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    items:['도어락 배터리 방전','도어락 버튼/터치 고장','비밀번호 오류로 잠김','현관 잠금장치 교체','방범창 / 창살 설치']
+  },
+  {
+    id:'plumbing', label:'수도 & 배관', count:'6가지 증상', urgent:true,
+    color:'#0891b2', bg:'rgba(8,145,178,.15)', border:'rgba(8,145,178,.25)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 22c-4 0-7-2.5-7-7 0-3 3-7 7-13 4 6 7 10 7 13 0 4.5-3 7-7 7z"/></svg>`,
+    items:['변기 막힘','싱크대 / 하수구 막힘','누수 (천장 / 벽 / 바닥)','수압이 너무 약해요','온수가 안 나와요','세면대 배수 막힘']
+  },
+  {
+    id:'pest', label:'해충 & 방역', count:'5가지 증상', urgent:true,
+    color:'#65a30d', bg:'rgba(101,163,13,.12)', border:'rgba(101,163,13,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17c-4 0-7-3.5-7-7s3-7 7-7 7 3.5 7 7-3 7-7 7z"/><path d="M5 10H2M22 10h-3M12 17v3M8 20l1-2M16 20l-1-2"/></svg>`,
+    items:['바퀴벌레 출몰','모기 / 날파리','개미 떼','쥐 / 설치류','기타 해충 방역']
+  },
+  {
+    id:'electric', label:'전기 & 조명', count:'5가지 증상', urgent:false,
+    color:'#d97706', bg:'rgba(217,119,6,.12)', border:'rgba(217,119,6,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    items:['형광등 / LED 교체','콘센트 / 스위치 고장','차단기가 내려가요','누전 의심','센서등 / 외등 설치']
+  },
+  {
+    id:'aircon', label:'에어컨 & 냉방', count:'5가지 증상', urgent:false,
+    color:'#0369a1', bg:'rgba(3,105,161,.15)', border:'rgba(3,105,161,.25)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 10 16H2m15.73-8.27A2 2 0 1 1 19 12H2"/></svg>`,
+    items:['에어컨 청소','냉방이 안 돼요','이상한 소음','가스 충전','필터 교체']
+  },
+  {
+    id:'boiler', label:'보일러 & 난방', count:'5가지 증상', urgent:true,
+    color:'#dc2626', bg:'rgba(220,38,38,.12)', border:'rgba(220,38,38,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`,
+    items:['온수가 안 나와요','난방이 안 돼요','보일러 소음','바닥 난방 고장','긴급 보일러 수리']
+  },
+  {
+    id:'furniture', label:'가구 조립 & 설치', count:'5가지', urgent:false,
+    color:'#7c3aed', bg:'rgba(124,58,237,.12)', border:'rgba(124,58,237,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    items:['IKEA 가구 조립','선반 / 행거 설치','TV 벽걸이 설치','책상 / 침대 프레임 조립','무거운 수납장 이동']
+  },
+  {
+    id:'window', label:'창문 & 방충망', count:'4가지', urgent:false,
+    color:'#0f766e', bg:'rgba(15,118,110,.12)', border:'rgba(15,118,110,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/></svg>`,
+    items:['방충망 교체 / 수리','방충망 뚫림 패치','창문 잠금장치 고장','단열 / 방풍 필름 시공']
+  },
+  {
+    id:'appliance', label:'가전제품 수리', count:'5가지', urgent:false,
+    color:'#475569', bg:'rgba(71,85,105,.15)', border:'rgba(71,85,105,.28)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+    items:['세탁기 고장','냉장고 고장','건조기 고장','식기세척기 고장','기타 가전 고장']
+  },
+  {
+    id:'interior', label:'도배 & 인테리어', count:'5가지', urgent:false,
+    color:'#92400e', bg:'rgba(146,64,14,.12)', border:'rgba(146,64,14,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+    items:['벽지 들뜸 / 찢어짐','곰팡이 제거','페인트 칠','타일 균열 / 교체','바닥재 교체']
+  },
+  {
+    id:'cleaning', label:'청소 서비스', count:'5가지', urgent:false,
+    color:'#0891b2', bg:'rgba(8,145,178,.12)', border:'rgba(8,145,178,.22)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>`,
+    items:['입주 청소','퇴거 청소','에어컨 청소','욕실 / 화장실 청소','주방 / 후드 청소']
+  },
+  {
+    id:'emergency', label:'긴급 출동', count:'5가지', urgent:true,
+    color:'#dc2626', bg:'rgba(220,38,38,.18)', border:'rgba(220,38,38,.32)',
+    icon:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    items:['가스 냄새가 나요','급수 차단 필요','전체 정전','열쇠 잠김 긴급 해제','기타 긴급 상황']
+  }
+];
 
-    function openManagerModal() {
-      const overlay = document.getElementById('manager-modal');
-      overlay.style.display = 'flex';
-      // double rAF: ensures display:flex is painted before opacity transition
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          overlay.classList.add('visible');
-        });
-      });
-      document.body.style.overflow = 'hidden';
-    }
+/* ════════════════════════════════
+   카테고리 그리드 렌더링
+════════════════════════════════ */
+(function renderCats() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = CATS.map(c => `
+    <div class="cat-card" onclick="openSubCategory('${c.id}')" style="border-color:${c.border};">
+      ${c.urgent ? '<span class="cat-urgent">긴급</span>' : ''}
+      <div class="cat-icon" style="background:${c.bg};border:1px solid ${c.border};color:${c.color};">${c.icon}</div>
+      <div>
+        <div class="cat-name">${c.label}</div>
+        <div class="cat-count">${c.count}</div>
+      </div>
+    </div>
+  `).join('');
+})();
 
-    function closeManagerModal() {
-      const overlay = document.getElementById('manager-modal');
-      overlay.classList.remove('visible');
-      overlay.addEventListener('transitionend', () => {
-        overlay.style.display = 'none';
-        document.body.style.overflow = '';
-      }, { once: true });
-    }
+/* ════════════════════════════════
+   Navigation
+════════════════════════════════ */
+let stack = ['main'];
+let currentState = {};
 
-    // 오버레이 배경 클릭 시 닫기 (모달 내부 클릭은 제외)
-    function handleOverlayClick(e) {
-      if (e.target === document.getElementById('manager-modal')) {
-        closeManagerModal();
-      }
-    }
+function goTo(id) {
+  const from = document.getElementById('s-' + stack[stack.length - 1]);
+  const to   = document.getElementById('s-' + id);
+  if (!to || id === stack[stack.length - 1]) return;
 
-    function handleApproval() {
-      const btn = document.getElementById('approval-btn');
-      const msg = document.getElementById('completion-msg');
+  from.classList.add('behind');
+  from.classList.remove('active');
+  to.style.transform = 'translateX(100%)';
+  to.style.transition = 'none';
+  // force reflow
+  to.offsetHeight;
+  to.style.transition = '';
+  to.classList.add('active');
+  to.scrollTop = 0;
+  stack.push(id);
+}
 
-      // 버튼 페이드 아웃
-      btn.style.transition = 'opacity 0.30s ease-in-out';
-      btn.style.opacity = '0';
-      btn.addEventListener('transitionend', () => {
-        btn.style.display = 'none';
-        // 완료 메시지 페이드 인
-        msg.style.display = 'flex';
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            msg.classList.add('visible');
-          });
-        });
-      }, { once: true });
-    }
+function goBack() {
+  if (stack.length <= 1) return;
+  const fromId = stack.pop();
+  const toId   = stack[stack.length - 1];
+  const from   = document.getElementById('s-' + fromId);
+  const to     = document.getElementById('s-' + toId);
 
-    /* ── 에러 복구 상태 관리 ── */
-    let failCount = 0;
+  from.classList.remove('active');
+  from.style.transform = 'translateX(100%)';
+  from.addEventListener('transitionend', () => {
+    from.style.transform = '';
+  }, { once: true });
 
-    // 테스트용: 항상 에러를 발생시키는 함수
-    function simulateDiagnostic() {
-      throw new Error('진단 서비스 연결 실패 (테스트용)');
-    }
+  to.classList.remove('behind');
+  to.classList.add('active');
+}
 
-    // 에러 발생 시 호출 — failCount 증가 및 분기 처리
-    function onDiagnosticError(triggerBtn) {
-      failCount += 1;
-      console.warn(`[SuriSuri] 진단 실패 (failCount: ${failCount})`);
+/* ════════════════════════════════
+   Camera Flow
+════════════════════════════════ */
+function capturePhoto() {
+  const proc = document.getElementById('cam-proc');
+  proc.classList.add('show');
+  setTimeout(() => {
+    proc.classList.remove('show');
+    currentState = { problem:'사진 촬영 분석', category:'카메라 진단', desc:'AI가 사진을 분석하여 문제를 파악했어요.' };
+    goTo('request');
+    setupRequest();
+  }, 2200);
+}
 
-      if (failCount >= 2) {
-        showEmergencyScreen();
-        return;
-      }
+/* ════════════════════════════════
+   Voice Flow
+════════════════════════════════ */
+let voiceTimer = null;
+document.getElementById('s-voice').addEventListener('transitionend', function(e) {
+  if (this.classList.contains('active') && e.propertyName === 'transform') {
+    // auto-stop after 4s
+    voiceTimer = setTimeout(stopVoice, 4000);
+  }
+});
 
-      // failCount === 1: 버튼 흔들림으로 에러 인지 전달
-      triggerBtn.classList.add('shake');
-      triggerBtn.addEventListener('animationend', () => {
-        triggerBtn.classList.remove('shake');
-      }, { once: true });
-    }
+function stopVoice() {
+  if (voiceTimer) { clearTimeout(voiceTimer); voiceTimer = null; }
+  const wave = document.getElementById('voice-wave');
+  wave.style.opacity = '0.3';
+  document.getElementById('voice-status').textContent = '인식 완료!';
+  setTimeout(() => {
+    wave.style.opacity = '';
+    currentState = { problem:'음성 접수', category:'음성 진단', desc:'음성으로 접수된 내용을 전문가가 확인할 예정이에요.' };
+    goTo('request');
+    setupRequest();
+    document.getElementById('voice-status').textContent = '듣고 있어요...';
+  }, 700);
+}
 
-    function handleCamera(btn) {
-      try {
-        simulateDiagnostic();
-      } catch (e) {
-        onDiagnosticError(btn);
-      }
-    }
+/* ════════════════════════════════
+   Manual → Sub-category
+════════════════════════════════ */
+function openSubCategory(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  if (!cat) return;
 
-    function handleVoice(btn) {
-      try {
-        simulateDiagnostic();
-      } catch (e) {
-        onDiagnosticError(btn);
-      }
-    }
+  document.getElementById('sub-screen-title').textContent = cat.label;
+  document.getElementById('sub-cat-info').innerHTML = `
+    <div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${cat.bg};border:1px solid ${cat.border};color:${cat.color};flex-shrink:0;">${cat.icon}</div>
+    <div>
+      <div style="font-size:15px;font-weight:600;color:var(--cream);">${cat.label}</div>
+      <div style="font-size:11px;color:var(--silver);margin-top:3px;">${cat.count}</div>
+    </div>
+  `;
+  document.getElementById('sub-list').innerHTML = cat.items.map(item => `
+    <div class="sub-item" onclick="selectSubItem('${cat.label}','${item}','${cat.color}')">
+      <div class="sub-dot" style="background:${cat.color};"></div>
+      <span class="sub-text">${item}</span>
+      <svg class="sub-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  `).join('');
 
-    // failCount === 2: 기존 화면 숨기고 비상 화면 전환
-    function showEmergencyScreen() {
-      // 배경 레이어 제거
-      document.querySelector('.bg-layer').style.display = 'none';
-      // 메인 컨텐츠 숨김
-      document.getElementById('main-content').style.visibility = 'hidden';
+  currentState.catColor = cat.color;
+  currentState.catLabel = cat.label;
+  goTo('subcategory');
+}
 
-      const screen = document.getElementById('emergency-screen');
-      screen.style.display = 'flex';
+function selectSubItem(catLabel, item, color) {
+  currentState = { problem: item, category: catLabel, color: color, desc: '담당 전문가가 방문하여 꼼꼼하게 처리해 드릴게요.' };
+  goTo('request');
+  setupRequest();
+}
 
-      // 다음 프레임에서 opacity 트랜지션 시작 (display 반영 이후)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          screen.classList.add('visible');
-        });
-      });
-    }
-  </script>
+/* ════════════════════════════════
+   Request Screen
+════════════════════════════════ */
+function setupRequest() {
+  const color = currentState.color || '#2563eb';
+  document.getElementById('req-tag').innerHTML = `
+    <span style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block;"></span>
+    <span style="color:${color};font-size:11px;font-weight:600;letter-spacing:.04em;">${currentState.category || '수리 접수'}</span>
+  `;
+  document.getElementById('req-tag').style.background = color.replace(')', ',.12)').replace('rgb','rgba');
+  document.getElementById('req-tag').style.border = `1px solid ${color.replace(')', ',.25)').replace('rgb','rgba')}`;
+  document.getElementById('req-problem').textContent = currentState.problem || '';
+  document.getElementById('req-desc').textContent    = currentState.desc || '';
 
+  // reset state
+  document.getElementById('req-form-area').style.display = '';
+  document.getElementById('success-wrap').classList.remove('visible');
+  document.getElementById('success-wrap').style.display = 'none';
+  document.getElementById('req-back-btn').style.display = '';
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('req-memo').value = '';
+}
+
+function selectTime(el) {
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function submitRequest() {
+  const reqArea = document.getElementById('req-form-area');
+  const succWrap = document.getElementById('success-wrap');
+
+  reqArea.style.transition = 'opacity .3s ease';
+  reqArea.style.opacity = '0';
+  setTimeout(() => {
+    reqArea.style.display = 'none';
+    document.getElementById('req-back-btn').style.display = 'none';
+    document.getElementById('success-problem-text').textContent =
+      `"${currentState.problem}" 항목이 정상 접수됐어요.\n매칭되는 전문가를 찾고 있습니다.`;
+    succWrap.style.display = 'flex';
+    requestAnimationFrame(() => requestAnimationFrame(() => succWrap.classList.add('visible')));
+  }, 300);
+}
+
+/* ════════════════════════════════
+   Manager Modal
+════════════════════════════════ */
+function openManagerModal() {
+  const o = document.getElementById('manager-modal');
+  o.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => o.classList.add('visible')));
+  document.body.style.overflow = 'hidden';
+}
+function closeManagerModal() {
+  const o = document.getElementById('manager-modal');
+  o.classList.remove('visible');
+  o.addEventListener('transitionend', () => { o.style.display = 'none'; document.body.style.overflow = ''; }, { once: true });
+}
+function handleOverlayClick(e) { if (e.target === document.getElementById('manager-modal')) closeManagerModal(); }
+
+function handleApproval() {
+  const btn = document.getElementById('approval-btn');
+  const msg = document.getElementById('completion-msg');
+  btn.style.transition = 'opacity .3s ease';
+  btn.style.opacity = '0';
+  btn.addEventListener('transitionend', () => {
+    btn.style.display = 'none';
+    msg.style.display = 'flex';
+    requestAnimationFrame(() => requestAnimationFrame(() => msg.classList.add('visible')));
+  }, { once: true });
+}
+
+/* ════════════════════════════════
+   Error Recovery
+════════════════════════════════ */
+let failCount = 0;
+function simulateDiagnostic() { throw new Error('테스트 에러'); }
+function onError(btn) {
+  failCount++;
+  if (failCount >= 2) { showEmergency(); return; }
+  btn.classList.add('shake');
+  btn.addEventListener('animationend', () => btn.classList.remove('shake'), { once: true });
+}
+function showEmergency() {
+  document.querySelector('.amb') && (document.querySelector('.amb').style.display = 'none');
+  const s = document.getElementById('emergency-screen');
+  s.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('visible')));
+}
+</script>
 </body>
 </html>
