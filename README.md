@@ -44,4 +44,4 @@
 
 ---
 
-*Made with Claude Code · 2026*
+
